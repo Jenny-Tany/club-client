@@ -160,8 +160,7 @@ const formatTime = (timeStr) => {
     const day = padZero(date.getDate())
     const hours = padZero(date.getHours())
     const minutes = padZero(date.getMinutes())
-    const seconds = padZero(date.getSeconds())
-    return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`
+    return `${year}-${month}-${day} ${hours}:${minutes}`
   } catch (e) {
     return timeStr // 解析失败则返回原字符串
   }

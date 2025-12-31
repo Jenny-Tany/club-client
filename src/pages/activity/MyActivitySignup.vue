@@ -79,7 +79,7 @@
 const formatTime = (timeStr) => {
   if (!timeStr) return '无报名时间' // 空值兜底
   // 替换 T 为空格，若需要去掉秒级精度可额外处理
-  return timeStr.replace('T', ' ') 
+  return timeStr.replace('T', ' ').split(':').slice(0,2).join(':') 
   // 进阶：只保留 年月日 时分 → timeStr.replace('T', ' ').split(':').slice(0,2).join(':')
 }
   

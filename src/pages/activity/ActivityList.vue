@@ -9,17 +9,18 @@
             clearable
           ></el-input>
         </el-form-item>
-        <el-form-item label="所属社团">
+        <el-form-item label="所属社团" class="option-select">
           <el-select
             v-model="searchForm.clubId"
             placeholder="请选择社团"
             clearable
           >
+            <!-- 遍历去重后的社团选项，key用clubId确保唯一性，label显示clubName -->
             <el-option
               v-for="club in clubOptions"
-              :key="club.id"
-              :label="club.name"
-              :value="club.id"
+              :key="club.clubId"
+              :label="club.clubName"
+              :value="club.clubId"
             ></el-option>
           </el-select>
         </el-form-item>
@@ -34,7 +35,7 @@
         <el-table-column prop="id" label="活动ID" width="80" align="center"></el-table-column>
         <el-table-column prop="title" label="活动名称" min-width="150" align="center"></el-table-column>
         <el-table-column prop="clubName" label="所属社团" width="120" align="center"></el-table-column>
-        <!-- 核心修改：格式化开始时间 -->
+        <!-- 格式化开始时间 -->
         <el-table-column label="开始时间" width="180" align="center">
           <template #default="scope">
             {{ formatDateTime(scope.row.startTime) }}
@@ -79,12 +80,11 @@
   import { useRouter } from 'vue-router'
   import { ElMessage } from 'element-plus'
   import { getActivityList } from '@/api/activity'
-  import { getMyClub } from '@/api/club' // 拉取社团列表用于筛选
-  
+
   const router = useRouter()
   const loading = ref(false)
   
-  // 搜索筛选参数
+  // 搜索筛选参数（clubId存储社团ID，与接口返回一致）
   const searchForm = ref({
     keyword: '',
     clubId: ''
@@ -95,11 +95,11 @@
   const pageSize = ref(10)
   const total = ref(0)
   
-  // 活动列表 + 社团筛选选项
+  // 活动列表 + 去重后的社团选项
   const activityList = ref([])
   const clubOptions = ref([])
 
-  // 新增：时间格式化函数（适配ISO格式，兼容空值/无效时间）
+  // 核心修改：时间格式化函数（去除秒数，只保留 年-月-日 时:分）
   const formatDateTime = (dateStr) => {
     // 空值兜底
     if (!dateStr) return '暂无时间'
@@ -107,47 +107,77 @@
     const date = new Date(dateStr)
     // 兼容无效时间格式
     if (isNaN(date.getTime())) return '时间格式错误'
-    // 补零处理：确保月份/日期/小时/分钟/秒数为2位
+    // 补零处理：确保月份/日期/小时/分钟为2位
     const year = date.getFullYear()
     const month = (date.getMonth() + 1).toString().padStart(2, '0')
     const day = date.getDate().toString().padStart(2, '0')
     const hours = date.getHours().toString().padStart(2, '0')
     const minutes = date.getMinutes().toString().padStart(2, '0')
-    const seconds = date.getSeconds().toString().padStart(2, '0')
-    // 最终格式：2025-12-30 21:42:02（如需简化可去掉秒数）
-    return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`
+    // 去除秒数：只返回 年-月-日 时:分 格式
+    return `${year}-${month}-${day} ${hours}:${minutes}`
+  }
+
+  // 核心：基于clubId去重（更精准，避免同名称不同社团的问题）
+  const getUniqueClubOptions = (activityRecords) => {
+    if (!Array.isArray(activityRecords)) {
+      console.warn('活动列表不是数组格式')
+      return []
+    }
+    // 1. 用对象缓存已存在的社团（key为clubId，确保唯一性）
+    const clubMap = {}
+    // 2. 遍历活动列表，提取社团信息
+    activityRecords.forEach(item => {
+      // 过滤无效数据（clubId和clubName不能为空）
+      if (item.clubId && item.clubName && item.clubName.trim() !== '') {
+        // 仅当clubId不存在于缓存时，才添加
+        if (!clubMap[item.clubId]) {
+          clubMap[item.clubId] = {
+            clubId: item.clubId,
+            clubName: item.clubName
+          }
+        }
+      }
+    })
+    // 3. 将对象的值转为数组（即为去重后的社团选项）
+    return Object.values(clubMap)
   }
   
   // 获取活动列表数据
-  const getActivityListData = async () => {
-    try {
-      loading.value = true
-      const params = {
-        pageNum: pageNum.value,
-        pageSize: pageSize.value,
-        keyword: searchForm.value.keyword,
-        clubId: searchForm.value.clubId // 社团筛选参数
-      }
-      const res = await getActivityList(params)
+const getActivityListData = async () => {
+  try {
+    loading.value = true
+    const params = {
+      pageNum: pageNum.value,
+      pageSize: pageSize.value,
+      keyword: searchForm.value.keyword,
+      clubId: searchForm.value.clubId // 传递社团ID进行筛选
+    }
+    const res = await getActivityList(params)
+    // 验证接口返回数据格式
+    if (res && res.data && Array.isArray(res.data.records)) {
       activityList.value = res.data.records
       total.value = res.data.total
-    } catch (error) {
-      console.error('获取活动列表失败：', error)
-      ElMessage.error('获取活动列表失败')
-    } finally {
-      loading.value = false
+      // 调用去重方法，更新社团选项
+      const uniqueClubs = getUniqueClubOptions(res.data.records)
+      clubOptions.value = uniqueClubs
+      console.log('去重后的社团选项：', uniqueClubs)
+    } else {
+      console.error('接口返回数据格式异常', res)
+      activityList.value = []
+      total.value = 0
+      clubOptions.value = []
     }
+  } catch (error) {
+    console.error('获取活动列表失败：', error)
+    ElMessage.error('获取活动列表失败')
+    // 异常时重置所有数据，避免页面报错
+    activityList.value = []
+    total.value = 0
+    clubOptions.value = []
+  } finally {
+    loading.value = false
   }
-  
-  // 获取社团选项（用于筛选）
-  const getClubOptions = async () => {
-    try {
-      const res = await getMyClub()
-      clubOptions.value = res.data // 用我的社团作为筛选选项
-    } catch (error) {
-      console.error('获取社团选项失败：', error)
-    }
-  }
+}
   
   // 重置搜索
   const resetSearch = () => {
@@ -176,19 +206,22 @@
   
   // 页面挂载时加载数据
   onMounted(() => {
-    getClubOptions()
     getActivityListData()
   })
   </script>
-  
-  <style scoped>
-  .activity-list-container {
-    padding: 20px;
-    background-color: #fff;
-    border-radius: 4px;
-    box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.06);
-  }
-  .search-form {
-    margin-bottom: 10px;
-  }
-  </style>
+
+<style scoped>
+.activity-list-container {
+  padding: 20px;
+  background-color: #fff;
+  border-radius: 4px;
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.06);
+}
+.search-form {
+  margin-bottom: 10px;
+}
+.option-select {
+  /* 可选：如需调整下拉框宽度，可在此添加样式 */
+  width: 200px;
+}
+</style>

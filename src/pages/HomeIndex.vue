@@ -19,33 +19,36 @@
 
     <!-- 核心内容区 -->
     <div class="home-content" id="main-content">
-      <!-- 功能入口卡片 -->
+      <!-- 功能入口卡片（添加点击跳转，匹配侧边栏路由） -->
       <div class="function-cards">
-        <div class="card-item">
+        <!-- 01 社团中心 - 跳转社团列表（对应侧边栏 /home/club/list） -->
+        <div class="card-item" @click="goToClubList" style="cursor: pointer;">
           <div class="card-icon club-icon">
             <i>01</i>
           </div>
           <h3 class="card-title">社团中心</h3>
           <p class="card-desc">浏览全校社团，加入感兴趣的组织</p>
-          <el-button type="text" class="card-link">立即查看 →</el-button>
+          <el-button type="text" class="card-link" @click.stop="goToClubList">立即查看 →</el-button>
         </div>
 
-        <div class="card-item">
+        <!-- 02 活动广场 - 跳转活动列表（对应侧边栏 /home/activity/list） -->
+        <div class="card-item" @click="goToActivityList" style="cursor: pointer;">
           <div class="card-icon activity-icon">
             <i>02</i>
           </div>
           <h3 class="card-title">活动广场</h3>
           <p class="card-desc">参与丰富社团活动，体验多彩校园生活</p>
-          <el-button type="text" class="card-link">立即参与 →</el-button>
+          <el-button type="text" class="card-link" @click.stop="goToActivityList">立即参与 →</el-button>
         </div>
 
-        <div class="card-item">
+        <!-- 03 我的中心 - 跳转个人信息（对应侧边栏 /home/user/info） -->
+        <div class="card-item" @click="goToUserInfo" style="cursor: pointer;">
           <div class="card-icon mine-icon">
             <i>03</i>
           </div>
           <h3 class="card-title">我的中心</h3>
           <p class="card-desc">管理我的社团和活动报名信息</p>
-          <el-button type="text" class="card-link">我的主页 →</el-button>
+          <el-button type="text" class="card-link" @click.stop="goToUserInfo">我的主页 →</el-button>
         </div>
       </div>
 
@@ -72,11 +75,31 @@
 
 <script setup>
 import { ref } from 'vue'
+// 引入路由（和侧边栏代码一致）
+import { useRouter } from 'vue-router'
+
+// 初始化路由实例（和侧边栏代码一致）
+const router = useRouter()
 
 // 滚动到内容区
 const scrollToContent = () => {
   const content = document.getElementById('main-content')
   content.scrollIntoView({ behavior: 'smooth' })
+}
+
+// 01 跳转社团列表（对应侧边栏 /home/club/list）
+const goToClubList = () => {
+  router.push('/home/club/list')
+}
+
+// 02 跳转活动列表（对应侧边栏 /home/activity/list）
+const goToActivityList = () => {
+  router.push('/home/activity/list')
+}
+
+// 03 跳转个人信息（对应侧边栏 /home/user/info）
+const goToUserInfo = () => {
+  router.push('/home/user/info')
 }
 </script>
 

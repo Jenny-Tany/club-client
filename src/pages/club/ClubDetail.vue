@@ -79,7 +79,6 @@
           <el-button 
             v-if="!clubDetail.isJoined"
             type="primary"
-            icon="el-icon-user-add"
             @click="handleJoinClub"
           >
             申请加入社团
