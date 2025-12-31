@@ -4,7 +4,6 @@
       <div class="page-header">
         <el-button 
           type="primary" 
-          icon="el-icon-arrow-left" 
           @click="goBack"
           style="margin-right: 10px"
         >
@@ -88,7 +87,6 @@
           <el-button 
             v-if="clubDetail.isJoined"
             type="danger"
-            icon="el-icon-user-delete"
             @click="handleQuitClub"
           >
             退出社团
@@ -166,11 +164,13 @@
           type: 'warning'
         }
       )
-      await joinClub(clubId)
+      // 错误：await joinClub(clubId) 
+      // 正确：传对象（clubId是后端需要的参数名，需和后端对齐）
+      await joinClub({ clubId: clubId }) 
       ElMessage.success('申请提交成功！请等待管理员审核')
-      getClubDetailData() // 刷新详情数据
+      getClubDetailData() // 刷新详情
     } catch (error) {
-      if (error !== 'cancel') {
+      if (error !== 'cancel') { // 排除点击取消的情况
         console.error('申请加入失败：', error)
         ElMessage.error(error.message || '申请加入失败，请稍后重试')
       }
