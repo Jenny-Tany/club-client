@@ -21,12 +21,12 @@ export default defineConfig({
         rewrite: (path) => path.replace(/^\/api/, '/api')
       },
       '/club': {
-        target: 'http://8.148.195.239:8080/api', // 删掉 /api，修正路径
+        target: 'http://8.148.195.239:8080/api', 
         changeOrigin: true,
         timeout: 15000 // 进一步延长公网请求超时时间
       },
       '/activity': {
-        target: 'http://8.148.195.239:8080/api', // 删掉 /api，修正路径
+        target: 'http://8.148.195.239:8080/api', 
         changeOrigin: true,
         timeout: 15000
       }

@@ -2,6 +2,7 @@
     <div class="my-activity-signup-container">
       <el-card title="我的活动报名记录" shadow="hover" class="signup-card">
         <el-table :data="mySignupList" border style="width: 100%">
+          <el-table-column prop="activityId" label="活动编号" width="120" align="center"></el-table-column>
           <!-- 报名ID：匹配后端id字段 -->
           <el-table-column prop="id" label="报名ID" width="80" align="center"></el-table-column>
           
@@ -9,16 +10,17 @@
           <el-table-column 
             prop="activityTitle" 
             label="活动名称" 
-            min-width="200" 
+            min-width="150" 
             align="center"
           ></el-table-column>
           
           <!-- 报名状态：匹配后端status字段（registered/checked_in） -->
+           
           <el-table-column label="报名状态" width="120" align="center">
             <template #default="scope">
-              <el-tag v-if="scope.row.status === 'registered'" type="primary">已报名</el-tag>
-              <el-tag v-if="scope.row.status === 'checked_in'" type="success">已签到</el-tag>
-              <el-tag v-else type="danger">已取消</el-tag>
+              <el-tag v-show="scope.row.status === 'registered'" type="primary">已报名</el-tag>
+              <el-tag v-show="scope.row.status === 'checked_in'" type="success">已签到</el-tag>
+              <el-tag v-show="!['registered', 'checked_in'].includes(scope.row.status)" type="danger">已取消</el-tag>
             </template>
           </el-table-column>
           
@@ -28,14 +30,14 @@
             label="报名时间" 
             width="200" 
             align="center"
-          ></el-table-column>
-          
-          <!-- 签到时间：匹配后端checkinTime字段（为空显示"-"） -->
-          <el-table-column label="签到时间" width="200" align="center">
+          >
+            <!-- 自定义模板格式化时间 -->
             <template #default="scope">
-              {{ scope.row.checkinTime || '-' }}
+              {{ formatTime(scope.row.signupTime) }}
             </template>
           </el-table-column>
+          
+          <!-- 签到时间：匹配后端checkinTime字段（为空显示"-"） -->
           
           <!-- 操作列：活动详情+取消报名 -->
           <el-table-column label="操作" width="180" align="center">
@@ -72,6 +74,14 @@
   
   const router = useRouter()
   const mySignupList = ref([])
+
+  // 时间格式化函数
+const formatTime = (timeStr) => {
+  if (!timeStr) return '无报名时间' // 空值兜底
+  // 替换 T 为空格，若需要去掉秒级精度可额外处理
+  return timeStr.replace('T', ' ') 
+  // 进阶：只保留 年月日 时分 → timeStr.replace('T', ' ').split(':').slice(0,2).join(':')
+}
   
   // 获取我的报名记录（适配后端返回结构）
   const getMySignupData = async () => {
