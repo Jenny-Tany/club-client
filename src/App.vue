@@ -1,52 +1,21 @@
 <template>
-  <div id="app">
-    <el-container style="height: 100vh;">
-      <el-aside width="200px" style="background-color: #2e3b4e;">
-        <el-menu
-          default-active="/clubs"
-          class="el-menu-vertical-demo"
-          background-color="#2e3b4e"
-          text-color="#fff"
-          active-text-color="#ffd04b"
-          router
-        >
-          <el-menu-item index="/clubs">
-            <el-icon><Menu /></el-icon>
-            <template #title>社团管理</template>
-          </el-menu-item>
-          <el-menu-item index="/activities">
-            <el-icon><Calendar /></el-icon>
-            <template #title>活动管理</template>
-          </el-menu-item>
-        </el-menu>
-      </el-aside>
-      <el-container>
-        <el-main>
-          <router-view />
-        </el-main>
-      </el-container>
-    </el-container>
-  </div>
+  <!-- 路由出口：所有路由组件都会渲染到这里 -->
+  <router-view />
 </template>
 
 <script setup>
-import { Menu, Calendar } from '@element-plus/icons-vue'
+// 此处可添加全局逻辑，暂时留空即可（满足单文件组件要求）
 </script>
 
 <style>
+/* 全局样式重置（可选，可根据需要修改） */
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
 }
-#app {
-  font-family: Avenir, Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  color: #2c3e50;
-}
-.el-menu-vertical-demo:not(.el-menu--collapse) {
-  width: 200px;
-  min-height: 400px;
+
+html, body {
+  height: 100%;
 }
 </style>
