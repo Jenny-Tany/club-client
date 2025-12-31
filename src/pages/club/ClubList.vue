@@ -20,7 +20,7 @@
         <el-table-column prop="id" label="社团ID" width="80" align="center"></el-table-column>
         <el-table-column prop="name" label="社团名称" min-width="150" align="center"></el-table-column>
         <el-table-column prop="description" label="社团简介" min-width="300" align="center"></el-table-column>
-        <el-table-column prop="leaderName" label="负责人" width="120" align="center"></el-table-column>
+        <el-table-column prop="createUsername" label="负责人" width="120" align="center"></el-table-column>
         <el-table-column prop="status" label="状态" width="100" align="center">
           <template #default="scope">
             <el-tag v-if="scope.row.status === 'normal'" type="success">正常</el-tag>
