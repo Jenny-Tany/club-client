@@ -34,11 +34,17 @@
         <el-table-column prop="id" label="活动ID" width="80" align="center"></el-table-column>
         <el-table-column prop="title" label="活动名称" min-width="150" align="center"></el-table-column>
         <el-table-column prop="clubName" label="所属社团" width="120" align="center"></el-table-column>
-        <el-table-column prop="startTime" label="开始时间" width="180" align="center"></el-table-column>
+        <!-- 核心修改：格式化开始时间 -->
+        <el-table-column label="开始时间" width="180" align="center">
+          <template #default="scope">
+            {{ formatDateTime(scope.row.startTime) }}
+          </template>
+        </el-table-column>
         <el-table-column prop="location" label="活动地点" min-width="150" align="center"></el-table-column>
         <el-table-column prop="status" label="活动状态" width="120" align="center">
           <template #default="scope">
             <el-tag v-if="scope.row.status === 'ongoing'" type="success">进行中</el-tag>
+            <el-tag v-else-if="scope.row.status === 'published'" type="primary">已发布</el-tag>
             <el-tag v-else-if="scope.row.status === 'pending' || scope.row.status === 'approved'" type="warning">待开展</el-tag>
             <el-tag v-else-if="scope.row.status === 'completed'" type="info">已完成</el-tag>
             <el-tag v-else type="danger">已取消/驳回</el-tag>
@@ -92,6 +98,25 @@
   // 活动列表 + 社团筛选选项
   const activityList = ref([])
   const clubOptions = ref([])
+
+  // 新增：时间格式化函数（适配ISO格式，兼容空值/无效时间）
+  const formatDateTime = (dateStr) => {
+    // 空值兜底
+    if (!dateStr) return '暂无时间'
+    // 解析时间
+    const date = new Date(dateStr)
+    // 兼容无效时间格式
+    if (isNaN(date.getTime())) return '时间格式错误'
+    // 补零处理：确保月份/日期/小时/分钟/秒数为2位
+    const year = date.getFullYear()
+    const month = (date.getMonth() + 1).toString().padStart(2, '0')
+    const day = date.getDate().toString().padStart(2, '0')
+    const hours = date.getHours().toString().padStart(2, '0')
+    const minutes = date.getMinutes().toString().padStart(2, '0')
+    const seconds = date.getSeconds().toString().padStart(2, '0')
+    // 最终格式：2025-12-30 21:42:02（如需简化可去掉秒数）
+    return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`
+  }
   
   // 获取活动列表数据
   const getActivityListData = async () => {

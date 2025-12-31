@@ -4,8 +4,13 @@
       <el-table :data="myApplicationList" border style="width: 100%">
         <el-table-column prop="id" label="申请ID" width="80" align="center"></el-table-column>
         <el-table-column prop="clubName" label="社团名称" min-width="150" align="center"></el-table-column>
-        <el-table-column prop="reason" label="申请理由" min-width="300" align="center"></el-table-column>
-        <!-- 核心：调用格式化函数处理申请时间 -->
+        <!-- 核心修改：申请理由空值显示「无」 -->
+        <el-table-column label="申请理由" min-width="300" align="center">
+          <template #default="scope">
+            {{ scope.row.reason || '无' }}
+          </template>
+        </el-table-column>
+        <!-- 申请时间格式化 -->
         <el-table-column label="申请时间" width="180" align="center">
           <template #default="scope">
             {{ formatDateTime(scope.row.createTime) }}
@@ -39,17 +44,12 @@ import { getMyClubApplications } from '@/api/club'
 const router = useRouter()
 const myApplicationList = ref([])
 
-// 新增：时间格式化函数（适配ISO格式时间）
+// 时间格式化函数（适配ISO格式时间）
 const formatDateTime = (dateStr) => {
-  // 空值兜底
   if (!dateStr) return '暂无时间'
-  
-  // 处理ISO时间（替换T为空格，裁剪秒数后多余的字符）
   const date = new Date(dateStr)
-  // 兼容无效时间
   if (isNaN(date.getTime())) return '时间格式错误'
 
-  // 格式化：YYYY-MM-DD HH:mm:ss（如需简化为HH:mm，去掉:ss即可）
   const year = date.getFullYear()
   const month = (date.getMonth() + 1).toString().padStart(2, '0')
   const day = date.getDate().toString().padStart(2, '0')
@@ -57,7 +57,6 @@ const formatDateTime = (dateStr) => {
   const minutes = date.getMinutes().toString().padStart(2, '0')
   const seconds = date.getSeconds().toString().padStart(2, '0')
 
-  // 最终格式：2025-12-30 21:42:02
   return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`
 }
 
@@ -65,7 +64,6 @@ const formatDateTime = (dateStr) => {
 const getMyApplicationData = async () => {
   try {
     const res = await getMyClubApplications()
-    // 兼容后端不同返回格式（直接数组/分页records）
     myApplicationList.value = res.data?.records || res.data || []
   } catch (error) {
     console.error('获取我的申请记录失败：', error)
