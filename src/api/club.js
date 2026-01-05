@@ -1,7 +1,7 @@
 import request from '@/utils/request'
 
 // 统一前缀
-const BASE_URL = '/club'
+const BASE_URL = '/api/club'
 
 // 分页查询社团列表
 export function getClubList(params) {

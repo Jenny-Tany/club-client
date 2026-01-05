@@ -1,9 +1,9 @@
 import request from '@/utils/request'
 
-// 浏览活动列表（支持关键词和社团筛选）
+// 浏览活动列表(支持关键词和社团筛选)
 export function getActivityList(params) {
   return request({
-    url: '/activity/list',
+    url: '/api/activity/list',
     method: 'get',
     params
   })
@@ -12,7 +12,7 @@ export function getActivityList(params) {
 // 查看活动详情
 export function getActivityDetail(id) {
   return request({
-    url: `/activity/${id}`,
+    url: `/api/activity/${id}`,
     method: 'get'
   })
 }
@@ -20,7 +20,7 @@ export function getActivityDetail(id) {
 // 报名参加活动
 export function signupActivity(id) {
   return request({
-    url: `/activity/${id}/signup`,
+    url: `/api/activity/${id}/signup`,
     method: 'post'
   })
 }
@@ -28,7 +28,7 @@ export function signupActivity(id) {
 // 取消活动报名
 export function cancelActivitySignup(id) {
   return request({
-    url: `/activity/${id}/signup`,
+    url: `/api/activity/${id}/signup`,
     method: 'delete'
   })
 }
@@ -36,7 +36,7 @@ export function cancelActivitySignup(id) {
 // 查看我的活动报名记录
 export function getMyActivitySignups() {
   return request({
-    url: '/activity/my-signups',
+    url: '/api/activity/my-signups',
     method: 'get'
   })
 }
