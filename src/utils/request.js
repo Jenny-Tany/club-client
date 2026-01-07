@@ -5,11 +5,11 @@ import router from "@/router";
 
 // 创建axios实例
 const service = axios.create({
-  baseURL: "", // 已通过Vite proxy配置跨域，无需填写baseURL
+  baseURL: import.meta.env.VITE_API_BASE_URL || "", // 开发环境走Vite proxy,生产环境使用完整后端地址
   timeout: 5000,
 });
 
-// 请求拦截器：添加Token
+// 请求拦截器:添加Token
 service.interceptors.request.use(
   (config) => {
     const userStore = useUserStore();
@@ -23,11 +23,11 @@ service.interceptors.request.use(
   }
 );
 
-// 响应拦截器：统一处理响应和异常
+// 响应拦截器:统一处理响应和异常
 service.interceptors.response.use(
   (response) => {
     const res = response.data;
-    // 操作成功（code=200）
+    // 操作成功(code=200)
     if (res.code === 200) {
       return res;
     } else {
@@ -41,7 +41,7 @@ service.interceptors.response.use(
     // 状态码判断
     switch (error.response?.status) {
       case 401: // 未登录/Token过期
-        ElMessageBox.confirm("登录状态已过期，请重新登录", "提示", {
+        ElMessageBox.confirm("登录状态已过期,请重新登录", "提示", {
           confirmButtonText: "重新登录",
           cancelButtonText: "取消",
           type: "warning",
@@ -54,10 +54,10 @@ service.interceptors.response.use(
         ElMessage.error("没有操作权限");
         break;
       case 400: // 参数校验失败
-        ElMessage.error("参数填写错误，请检查后重试");
+        ElMessage.error("参数填写错误,请检查后重试");
         break;
       case 500: // 服务器异常
-        ElMessage.error("服务器内部错误，请稍后再试");
+        ElMessage.error("服务器内部错误,请稍后再试");
         break;
       default:
         ElMessage.error(error.message || "请求异常");
