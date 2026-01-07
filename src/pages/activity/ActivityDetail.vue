@@ -83,8 +83,8 @@
           :disabled="!canSignup"
         >
           报名参加
-          <!-- 核心修改：tooltip 显示后端返回的禁用原因，无则显示默认 -->
-          <el-tooltip v-if="!canSignup" :content="activityDetail.signupDisabledReason || '仅待审核/已审核/进行中的活动可报名，且活动未报满'" placement="top">
+          <!-- 优化提示：区分不同禁用原因 -->
+          <el-tooltip v-if="!canSignup" :content="getSignupDisabledTip()" placement="top">
             <i class="el-icon-question"></i>
           </el-tooltip>
         </el-button>
@@ -99,7 +99,7 @@
           icon="el-icon-user-delete"
         >
           取消报名
-          <el-tooltip v-if="!canCancel" content="仅已报名的待审核/已审核/进行中活动可取消" placement="top">
+          <el-tooltip v-if="!canCancel" content="仅已报名的待审核/已审核/进行中/已发布活动可取消" placement="top">
             <i class="el-icon-question"></i>
           </el-tooltip>
         </el-button>
@@ -131,23 +131,113 @@ const activityId = ref(route.params.id)
 const activityDetail = ref(null)
 const hasSignup = ref(false) // 是否已报名
 
-// 计算属性：判断是否可报名/取消（优化逻辑）
+// 核心修复：添加 published 到可报名状态列表
 const canSignup = computed(() => {
-  if (!activityDetail.value) return false
-  const { status, currentMembers, maxMembers, signupDeadline } = activityDetail.value
-  // 1. 活动状态为待审核/已审核/进行中 2. 未报名 3. 未报满 4. 未过报名截止时间
-  const isStatusValid = ['pending', 'approved', 'ongoing'].includes(status)
+  if (!activityDetail.value) {
+    console.log('canSignup：活动详情未加载')
+    return false
+  }
+  
+  const { 
+    status, 
+    currentMembers, 
+    maxMembers, 
+    signupEndTime 
+  } = activityDetail.value
+
+  // 1. 打印所有判断条件（方便调试）
+  console.log('===== 报名条件校验 =====')
+  console.log('活动状态：', status)
+  console.log('是否已报名：', hasSignup.value)
+  console.log('当前人数/最大人数：', currentMembers, '/', maxMembers)
+  console.log('报名截止时间（原始）：', signupEndTime)
+  
+  // 2. 基础状态校验：新增 published（已发布）状态
+  const isStatusValid = ['pending', 'approved', 'ongoing', 'published'].includes(status)
+  console.log('状态是否有效：', isStatusValid)
+  
+  // 3. 未报名校验
+  const isNotSignedUp = !hasSignup.value
+  console.log('是否未报名：', isNotSignedUp)
+  
+  // 4. 人数校验：未报满（无最大人数则视为不限）
   const isNotFull = maxMembers ? currentMembers < maxMembers : true
-  const isBeforeDeadline = signupDeadline ? new Date(signupDeadline) > new Date() : true
-  return isStatusValid && !hasSignup.value && isNotFull && isBeforeDeadline
+  console.log('是否未报满：', isNotFull)
+  
+  // 5. 时间校验：时间戳对比（时区无关）
+  let isBeforeDeadline = false
+  if (signupEndTime) {
+    try {
+      const deadlineTime = new Date(signupEndTime).getTime() // 截止时间戳
+      const nowTime = new Date().getTime() // 当前时间戳
+      isBeforeDeadline = deadlineTime > nowTime
+      
+      // 打印时间戳对比结果
+      console.log('截止时间戳：', deadlineTime)
+      console.log('当前时间戳：', nowTime)
+      console.log('是否在截止前：', isBeforeDeadline)
+    } catch (e) {
+      console.error('解析报名截止时间失败：', e)
+      isBeforeDeadline = false
+    }
+  } else {
+    // 无截止时间 → 可报名
+    isBeforeDeadline = true
+    console.log('无截止时间，时间校验通过')
+  }
+
+  // 最终结果
+  const canSignupResult = isStatusValid && isNotSignedUp && isNotFull && isBeforeDeadline
+  console.log('最终是否可报名：', canSignupResult)
+  console.log('========================')
+
+  return canSignupResult
 })
 
+// 修复：取消报名也添加 published 状态
 const canCancel = computed(() => {
   if (!activityDetail.value) return false
   const { status } = activityDetail.value
-  // 1. 已报名 2. 活动状态为待审核/已审核/进行中
-  return hasSignup.value && ['pending', 'approved', 'ongoing'].includes(status)
+  return hasSignup.value && ['pending', 'approved', 'ongoing', 'published'].includes(status)
 })
+
+// 新增：获取报名禁用的具体提示
+const getSignupDisabledTip = () => {
+  if (!activityDetail.value) return '活动信息未加载完成'
+  
+  const { status, currentMembers, maxMembers, signupEndTime } = activityDetail.value
+  
+  // 时间原因
+  if (signupEndTime) {
+    try {
+      const deadlineTime = new Date(signupEndTime).getTime()
+      const nowTime = new Date().getTime()
+      if (deadlineTime <= nowTime) {
+        return `报名已截止（截止时间：${formatTime(signupEndTime)}）`
+      }
+    } catch (e) {
+      return '报名截止时间格式错误'
+    }
+  }
+  
+  // 人数原因
+  if (maxMembers && currentMembers >= maxMembers) {
+    return '活动已报满，无法报名'
+  }
+  
+  // 状态原因：更新状态文本，包含 published
+  if (!['pending', 'approved', 'ongoing', 'published'].includes(status)) {
+    return `当前活动状态为${getActivityStatusText(status)}，无法报名`
+  }
+  
+  // 已报名原因
+  if (hasSignup.value) {
+    return '您已报名该活动，无需重复报名'
+  }
+  
+  // 兜底提示
+  return '暂无法报名该活动'
+}
 
 // 时间格式化函数（适配ISO时间）
 const formatTime = (timeStr) => {
@@ -162,43 +252,39 @@ const formatTime = (timeStr) => {
     const minutes = padZero(date.getMinutes())
     return `${year}-${month}-${day} ${hours}:${minutes}`
   } catch (e) {
-    return timeStr // 解析失败则返回原字符串
+    return timeStr
   }
 }
 
-// 活动状态标签类型
+// 活动状态标签类型：添加 published 的标签类型
 const getActivityStatusTagType = (status) => {
   const typeMap = {
-    pending: 'warning',     // 待审核
-    approved: 'primary',    // 已审核（优化为primary更区分）
-    ongoing: 'success',     // 进行中
-    completed: 'info',      // 已完成
-    cancelled: 'danger',    // 已取消
-    rejected: 'danger'      // 已驳回
+    pending: 'warning',
+    approved: 'primary',
+    ongoing: 'success',
+    published: 'primary', // 已发布和已审核用相同标签
+    completed: 'info',
+    cancelled: 'danger',
+    rejected: 'danger'
   }
   return typeMap[status] || 'default'
 }
 
-// 核心修改：将未知状态替换为和signupDisabledReason一致的逻辑（优先取后端返回，无则按状态匹配，最后兜底为报名相关提示）
+// 活动状态文本：添加 published 的文本
 const getActivityStatusText = (status) => {
-  // 优先使用后端返回的禁用原因（如果有）
-  if (activityDetail.value?.signupDisabledReason) {
-    return activityDetail.value.signupDisabledReason
-  }
-  // 常规状态映射
   const textMap = {
     pending: '待审核',
     approved: '已审核',
     ongoing: '进行中',
+    published: '已发布', // 补充已发布的文本
     completed: '已完成',
     cancelled: '已取消',
     rejected: '已驳回'
   }
-  // 兜底：替换原"未知状态"为和禁用原因一致的提示
-  return textMap[status] || '报名已截止'
+  return textMap[status] || '未知状态'
 }
 
-// 获取活动详情（优化错误处理）
+// 获取活动详情
 const getActivityDetailData = async () => {
   if (!activityId.value) {
     ElMessage.error('活动ID不能为空')
@@ -207,10 +293,9 @@ const getActivityDetailData = async () => {
   try {
     loading.value = true
     const res = await getActivityDetail(activityId.value)
-    // 适配后端响应：优先取res.data，若后端直接返回对象则取res
     activityDetail.value = res.data || res
-    // 从后端获取是否已报名（核心适配点）
-    hasSignup.value = !!activityDetail.value.hasSignup // 后端返回的报名状态
+    hasSignup.value = !!activityDetail.value.hasSignup
+    console.log('加载活动详情：', activityDetail.value)
   } catch (error) {
     console.error('获取活动详情失败：', error)
     ElMessage.error(`获取详情失败：${error.message || '网络异常'}`)
@@ -219,7 +304,7 @@ const getActivityDetailData = async () => {
   }
 }
 
-// 报名活动（增加二次确认）
+// 报名活动
 const handleSignup = async () => {
   try {
     await ElMessageBox.confirm('确认报名该活动？', '报名确认', {
@@ -230,17 +315,16 @@ const handleSignup = async () => {
     await signupActivity(activityId.value)
     ElMessage.success('报名成功！')
     hasSignup.value = true
-    // 刷新详情（更新人数/状态）
     await getActivityDetailData()
   } catch (error) {
-    if (error !== 'cancel') { // 排除用户取消确认的情况
+    if (error !== 'cancel') {
       console.error('报名失败：', error)
       ElMessage.error(`报名失败：${error.message || '操作异常'}`)
     }
   }
 }
 
-// 取消报名（增加二次确认）
+// 取消报名
 const handleCancelSignup = async () => {
   try {
     await ElMessageBox.confirm('确认取消报名？取消后将失去活动参与资格', '取消报名', {
@@ -251,7 +335,6 @@ const handleCancelSignup = async () => {
     await cancelActivitySignup(activityId.value)
     ElMessage.success('取消报名成功！')
     hasSignup.value = false
-    // 刷新详情
     await getActivityDetailData()
   } catch (error) {
     if (error !== 'cancel') {
@@ -261,7 +344,7 @@ const handleCancelSignup = async () => {
   }
 }
 
-// 返回列表（支持回退历史）
+// 返回列表
 const goBack = () => {
   if (window.history.length > 1) {
     router.go(-1)
@@ -308,7 +391,6 @@ onMounted(() => {
   padding: 20px;
 }
 
-/* 简介内容样式优化 */
 .desc-content {
   white-space: pre-wrap;
   text-align: left;
@@ -317,7 +399,6 @@ onMounted(() => {
   padding: 8px 0;
 }
 
-/* 按钮组样式 */
 .activity-btn-group {
   display: flex;
   justify-content: center;
@@ -327,13 +408,11 @@ onMounted(() => {
   margin-top: 16px;
 }
 
-/* 满员提示样式 */
 .text-warning {
   color: #f59e0b !important;
   font-weight: 500;
 }
 
-/* 适配小屏幕 */
 @media (max-width: 768px) {
   .activity-header {
     flex-direction: column;

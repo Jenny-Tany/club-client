@@ -16,17 +16,17 @@ export default defineConfig({
     port: 3000,
     proxy: {
       '/api': {
-        target: 'http://8.148.195.239:8080', // 移除末尾 /
+        target: 'http://8.148.217.172:8080', // 移除末尾 /
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, '/api')
       },
       '/club': {
-        target: 'http://8.148.195.239:8080/api', 
+        target: 'http://8.148.217.172:8080/api', 
         changeOrigin: true,
         timeout: 15000 // 进一步延长公网请求超时时间
       },
       '/activity': {
-        target: 'http://8.148.195.239:8080/api', 
+        target: 'http://8.148.217.172:8080/api', 
         changeOrigin: true,
         timeout: 15000
       }
