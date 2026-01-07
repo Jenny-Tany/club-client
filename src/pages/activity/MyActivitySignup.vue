@@ -52,7 +52,7 @@
                 v-if="scope.row.status === 'registered'"
                 type="text"
                 text-color="danger"
-                @click="handleCancelSignup(scope.row.id)"
+                @click="handleCancelSignup(scope.row.activityId)"
               >
                 取消报名
               </el-button>
