@@ -79,15 +79,11 @@
       
       <!-- 测试账号提示 -->
       <div class="test-account-tip">
-        <p class="tip-title"><i class="el-icon-info"></i> 测试账号</p>
+        <p class="tip-title"> 测试账号</p>
         <div class="account-list">
           <div class="account-item">
             <span class="role">普通用户：</span>
             <span class="account">test_user / 123456</span>
-          </div>
-          <div class="account-item">
-            <span class="role">社团管理员：</span>
-            <span class="account">club_admin / 123456</span>
           </div>
         </div>
       </div>
